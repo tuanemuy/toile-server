@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id
+  createdAt DateTime  @default(now())
+  projects  Project[] @ignore
+}
+
+model Profile {
+  userId      String @id
+  name        String
+  thumbnailId Int?
+  thumbnail   Media? @relation(fields: [thumbnailId], references: [id])
+}
+
+model Project {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  postTypes  PostType[]  @ignore
+  fieldTypes FieldType[] @ignore
+  categories Category[]  @ignore
+  tags       Tag[]       @ignore
+  posts      Post[]      @ignore
+
+  @@index([userId])
+}
+
+model ProjectSetting {
+  projectId Int    @id
+  name      String
+  logoId    Int?
+  logo      Media? @relation(fields: [logoId], references: [id])
+}
+
+model Media {
+  id                     Int              @id
+  name                   String
+  mediaType              String
+  url                    String
+  createdAt              DateTime         @default(now())
+  relatedProfiles        Profile[]        @ignore
+  relatedProjectSettings ProjectSetting[] @ignore
+  files                  File[]
+  relatedMediaValues     MediaValue[]     @ignore
+}
+
+model File {
+  id      Int    @id @default(autoincrement())
+  label   String
+  url     String
+  path    String
+  mediaId Int
+  media   Media  @relation(fields: [mediaId], references: [id])
+
+  @@unique([mediaId, label])
+}
+
+model PostType {
+  id                Int         @id @default(autoincrement())
+  slug              String
+  name              String
+  iconTag           String?
+  order             Int         @default(10)
+  isPublic          Boolean
+  projectId         Int
+  project           Project     @relation(fields: [projectId], references: [id])
+  fields            Field[]
+  relatedFieldTypes FieldType[] @ignore
+  categories        Category[]  @ignore
+  posts             Post[]      @ignore
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+}
+
+model Field {
+  id          Int       @id @default(autoincrement())
+  slug        String
+  name        String
+  isRequired  Boolean
+  isMultiple  Boolean
+  order       Int
+  postTypeId  Int
+  postType    PostType  @relation(fields: [postTypeId], references: [id])
+  fieldTypeId Int
+  fieldType   FieldType @relation(fields: [fieldTypeId], references: [id])
+  values      Value[]   @ignore
+
+  @@unique([postTypeId, slug])
+  @@index([postTypeId])
+}
+
+model InputType {
+  id                Int         @id @default(autoincrement())
+  slug              String      @unique
+  name              String
+  relatedFieldTypes FieldType[] @ignore
+}
+
+model FieldType {
+  id              Int       @id @default(autoincrement())
+  slug            String
+  name            String
+  order           Int
+  inputTypeId     Int
+  inputType       InputType @relation(fields: [inputTypeId], references: [id])
+  inputPostTypeId Int
+  inputPostType   PostType  @relation(fields: [inputPostTypeId], references: [id])
+  projectId       Int
+  project         Project   @relation(fields: [projectId], references: [id])
+  relatedFields   Field[]   @ignore
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String
+  slug       String
+  postTypeId Int
+  postType   PostType @relation(fields: [postTypeId], references: [id])
+  projectId  Int
+  project    Project  @relation(fields: [projectId], references: [id])
+  posts      Post[]   @ignore
+
+  @@unique([postTypeId, slug])
+  @@index([projectId])
+}
+
+model Tag {
+  id        Int           @id @default(autoincrement())
+  name      String
+  slug      String
+  projectId Int
+  project   Project       @relation(fields: [projectId], references: [id])
+  posts     TagsOnPosts[] @ignore
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+}
+
+model TagsOnPosts {
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+  tagId  Int
+  tag    Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
+
+model Post {
+  id               Int           @id @default(autoincrement())
+  title            String
+  createdAt        DateTime      @default(now())
+  deletedAt        DateTime?
+  projectId        Int
+  project          Project       @relation(fields: [projectId], references: [id])
+  postTypeId       Int
+  postType         PostType      @relation(fields: [postTypeId], references: [id])
+  categoryId       Int?
+  category         Category?     @relation(fields: [categoryId], references: [id])
+  tags             TagsOnPosts[]
+  revisions        Revision[]
+  relatedPostValue PostValue[]   @ignore
+
+  @@index([projectId, postTypeId, title])
+  @@index([projectId, postTypeId, categoryId])
+}
+
+model Revision {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  values    Value[]
+}
+
+model Value {
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  revisionId    Int
+  revision      Revision       @relation(fields: [revisionId], references: [id])
+  fieldId       Int
+  field         Field          @relation(fields: [fieldId], references: [id])
+  booleanValue  BooleanValue?
+  integerValue  IntegerValue?
+  mediaValue    MediaValue?
+  floatValue    FloatValue?
+  postValue     PostValue?
+  textValue     TextValue?
+  dateTimeValue DateTimeValue?
+}
+
+model BooleanValue {
+  valueId Int    @id
+  value   Value  @relation(fields: [valueId], references: [id])
+  body    String
+}
+
+model IntegerValue {
+  valueId Int   @id
+  value   Value @relation(fields: [valueId], references: [id])
+  body    Int
+}
+
+model MediaValue {
+  valueId Int   @id
+  value   Value @relation(fields: [valueId], references: [id])
+  mediaId Int
+  media   Media @relation(fields: [mediaId], references: [id])
+}
+
+model FloatValue {
+  valueId Int   @id
+  value   Value @relation(fields: [valueId], references: [id])
+  body    Float
+}
+
+model PostValue {
+  valueId Int   @id
+  value   Value @relation(fields: [valueId], references: [id])
+  postId  Int
+  post    Post  @relation(fields: [postId], references: [id])
+}
+
+model TextValue {
+  valueId Int    @id
+  value   Value  @relation(fields: [valueId], references: [id])
+  body    String
+}
+
+model DateTimeValue {
+  valueId Int      @id
+  value   Value    @relation(fields: [valueId], references: [id])
+  body    DateTime
+}
