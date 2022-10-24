@@ -6,8 +6,8 @@ services:
     restart: always
     command: -c 'config_file=/etc/postgresql/postgresql.conf'
     volumes:
-      - .db/data:/var/lib/postgresql/data
-      - .db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./db/data:/var/lib/postgresql/data
+      - ./db/postgresql.conf:/etc/postgresql/postgresql.conf
     ports:
       - 55432:5432
     environment:
