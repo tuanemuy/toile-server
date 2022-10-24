@@ -8,38 +8,47 @@ datasource db {
 }
 
 model User {
-  id        String    @id
+  id        String    @id @default(uuid())
+  authId    String    @unique
+  username  String    @unique
   createdAt DateTime  @default(now())
   projects  Project[] @ignore
+  profile   Profile?
+
+  @@index([username])
+  @@index([authId])
 }
 
 model Profile {
   userId      String @id
+  user        User   @relation(fields: [userId], references: [id])
   name        String
   thumbnailId Int?
   thumbnail   Media? @relation(fields: [thumbnailId], references: [id])
 }
 
 model Project {
-  id         Int         @id @default(autoincrement())
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id         Int             @id @default(autoincrement())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
   userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  postTypes  PostType[]  @ignore
-  fieldTypes FieldType[] @ignore
-  categories Category[]  @ignore
-  tags       Tag[]       @ignore
-  posts      Post[]      @ignore
+  user       User            @relation(fields: [userId], references: [id])
+  postTypes  PostType[]      @ignore
+  fieldTypes FieldType[]     @ignore
+  categories Category[]      @ignore
+  tags       Tag[]           @ignore
+  posts      Post[]          @ignore
+  setting    ProjectSetting?
 
   @@index([userId])
 }
 
 model ProjectSetting {
-  projectId Int    @id
+  projectId Int     @id
+  project   Project @relation(fields: [projectId], references: [id])
   name      String
   logoId    Int?
-  logo      Media? @relation(fields: [logoId], references: [id])
+  logo      Media?  @relation(fields: [logoId], references: [id])
 }
 
 model Media {
