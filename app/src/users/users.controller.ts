@@ -2,41 +2,54 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
-  Delete,
   Body,
-  Param,
   Query,
+  Patch,
+  Param,
+  Delete,
 } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 import { UsersService } from './users.service';
-import { User, Prisma } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { FindUserDto } from './dto/find-user.dto';
 
 @Controller('users')
+@ApiTags('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body() userData: Prisma.UserCreateInput): Promise<User> {
-    return this.usersService.create(userData);
+  @ApiCreatedResponse()
+  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    return this.usersService.create(createUserDto);
   }
 
   @Get()
-  async findAll(@Query() query: Prisma.UserFindManyArgs): Promise<User[]> {
-    return this.usersService.findAll(query);
+  @ApiOkResponse({ isArray: true })
+  async findAll(@Query() findUserDto: FindUserDto): Promise<User[]> {
+    return this.usersService.findAll(findUserDto);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<User | null> {
-    return this.usersService.findOne({ id });
+  @Get(':username')
+  @ApiOkResponse()
+  async findOne(@Param('username') username: string): Promise<User | null> {
+    return this.usersService.findOne(username);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() userData: Prisma.UserUpdateInput) {
-    return this.usersService.update({ id }, userData);
+  @Patch(':username')
+  @ApiOkResponse()
+  async update(
+    @Param('username') username: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.usersService.update(username, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove({ id });
+  @Delete(':username')
+  @ApiOkResponse()
+  async remove(@Param('username') username: string): Promise<User> {
+    return this.usersService.remove(username);
   }
 }
